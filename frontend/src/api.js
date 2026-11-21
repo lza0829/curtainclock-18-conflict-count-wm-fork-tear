@@ -30,18 +30,22 @@ export const api = {
   executors: () => req("/executors"),
   windows: () => req("/windows"),
   leases: () => req("/leases"),
-  conflicts: (window_code) =>
-    req(
-      window_code
-        ? `/conflicts?window_code=${encodeURIComponent(window_code)}`
-        : "/conflicts"
-    ),
-  conflictCount: (window_code) =>
-    req(
-      window_code
-        ? `/conflicts/count?window_code=${encodeURIComponent(window_code)}`
-        : "/conflicts/count"
-    ),
+  conflicts: ({ window_code, resource_code } = {}) => {
+    const q = new URLSearchParams();
+    if (window_code) q.set("window_code", window_code);
+    if (resource_code) q.set("resource_code", resource_code);
+    const qs = q.toString();
+    return req(qs ? `/conflicts?${qs}` : "/conflicts");
+  },
+  conflictCount: ({ window_code, resource_code } = {}) => {
+    const q = new URLSearchParams();
+    if (window_code) q.set("window_code", window_code);
+    if (resource_code) q.set("resource_code", resource_code);
+    const qs = q.toString();
+    return req(qs ? `/conflicts/count?${qs}` : "/conflicts/count");
+  },
+  conflictsByResource: () => req("/conflicts/by-resource"),
+  watermark: () => req("/watermark"),
   audit: (window_code) =>
     req(
       window_code

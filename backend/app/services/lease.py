@@ -1,5 +1,4 @@
 from __future__ import annotations
-from app.services import conflict_panel
 
 import sqlite3
 
@@ -50,8 +49,6 @@ def _failure_receipt(conn: sqlite3.Connection, session: sqlite3.Row, reasons: li
     """统一的开窗失败回执：事件只追加 + 审计 + 与冲突页同源的计数。"""
     mode = _conflict_mode(conn)
     conflict_ids = _record_conflicts(conn, session, reasons)
-    for reason in reasons:
-        conflict_panel.remember_conflict(conn, session["code"], reason)
     conflict_store.insert_audit(
         conn,
         action="open",
@@ -65,9 +62,11 @@ def _failure_receipt(conn: sqlite3.Connection, session: sqlite3.Row, reasons: li
         "conflict_mode": mode,
         "window_code": session["code"],
         "conflict_ids": conflict_ids,
-        # 计数与列表/总览同源：都是 conflicts 表 COUNT(*)
+        # 计数与列表/总览同源：都是 conflicts 表 COUNT(*)，同一事务内读取
         "conflict_count": conflict_store.count_conflicts(conn),
         "window_conflict_count": conflict_store.count_conflicts(conn, session["code"]),
+        # 回执原因必须能在冲突页查到：直接回带刚插入的同一批行
+        "conflict_rows": conflict_store.list_conflicts_by_ids(conn, conflict_ids),
     }
 
 

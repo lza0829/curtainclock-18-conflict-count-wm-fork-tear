@@ -37,11 +37,14 @@ export default function Sessions() {
     } catch (e) {
       const p = e.payload;
       if (p && p.conflict_ids?.length) {
-        // 租约开窗回执：新事件只追加，计数与冲突页/总览同源
+        // 开窗失败回执：事件只追加；回执原因必须在冲突页有行，计数同源
         setErr(
           `${e.message}｜已落冲突事件 #${p.conflict_ids.join(", #")}；` +
             `该批窗累计 ${p.window_conflict_count} 行，全局 ${p.conflict_count} 行`
         );
+      } else if (p && p.error) {
+        // 有失败原因却没有事件行：回执与冲突表撕裂，不得静默当普通错误
+        setErr(`${p.error}｜警告：失败回执未落冲突事件，冲突表与回执不一致`);
       } else {
         setErr(e.message);
       }

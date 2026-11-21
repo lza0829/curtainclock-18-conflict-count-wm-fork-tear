@@ -120,6 +120,11 @@ def init_db() -> None:
         # 迁移：旧版本把冲突计数/在途租约物化为水位，与事件行双写会漂移。
         # 臂 A 下计数一律由事件表/租约表现算，废弃这两个键（保留 watermarks 表本身兼容）。
         conn.execute("DELETE FROM watermarks WHERE key IN ('conflict_count', 'open_leases')")
+        # 旧版「面板缓存/涂色徽章」是第二套可写计数源（甚至 +2、截断 50 条），
+        # 已由 conflict_panel 移除；残留设置键一并清除，防止读取到幽灵计数。
+        conn.execute(
+            "DELETE FROM settings WHERE key IN ('conflict_panel_cache', 'conflict_panel_badge')"
+        )
         conn.commit()
     finally:
         conn.close()
